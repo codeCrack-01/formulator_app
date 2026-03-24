@@ -11,7 +11,7 @@ data class Quantity(
         val v2 = other.value * other.unit.factor
 
         val resultBase = v1 + v2
-        return Quantity(resultBase / other.unit.factor, other.unit)
+        return Quantity(resultBase / this.unit.factor, this.unit)
     }
     operator fun times(other: Quantity): Quantity {
         // 1. Calculate how many 'this.unit' are in one 'other.unit'
@@ -54,5 +54,18 @@ data class Quantity(
                 this.unit.dimension - other.unit.dimension
             )
         )
+    }
+
+    fun Quantity.to(target: String): Quantity {
+        val targetUnit = UnitRegistry.get(target)
+
+        require(this.unit.dimension == targetUnit.dimension) {
+            "Cannot convert ${unit.name} to ${targetUnit.name}"
+        }
+
+        val baseValue = value * unit.factor
+        val newValue = baseValue / targetUnit.factor
+
+        return Quantity(newValue, targetUnit)
     }
 }
