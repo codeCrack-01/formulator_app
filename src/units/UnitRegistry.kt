@@ -1,3 +1,5 @@
+package units
+
 object UnitRegistry {
     private val units = mutableMapOf<String, Unit>()
 
@@ -7,6 +9,12 @@ object UnitRegistry {
 
     fun get(name: String): Unit {
         return units[name]
-            ?: error("Unit $name not found")
+            ?: error("units.Unit $name not found")
+    }
+
+    fun getOrNull(name: String): Unit? = units[name]
+
+    fun clear() {
+        units.clear()
     }
 }

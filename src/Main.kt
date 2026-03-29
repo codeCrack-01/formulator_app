@@ -1,3 +1,8 @@
+import units.Dimension
+import units.Quantity
+import units.Unit
+import units.UnitRegistry
+
 fun initUnits() {
     val length = Dimension(length = 1)
 
@@ -15,8 +20,8 @@ fun initUnits() {
 
     UnitRegistry.register(Unit("g", 0.001, mass))
     UnitRegistry.register(Unit("kg", 1.0, mass))
-    UnitRegistry.register(Unit("ton", 1000.0, mass))
-    UnitRegistry.register(Unit("tɵn", 40.0, mass)) // The pk_ton
+    UnitRegistry.register(Unit("tonne", 1000.0, mass))
+    UnitRegistry.register(Unit("ton", 40.0, mass)) // The pk_ton
 }
 
 fun main() {
