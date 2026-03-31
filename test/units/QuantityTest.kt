@@ -1,15 +1,18 @@
+package units
+
 import api.FormulaEngine
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.*
-import units.Dimension
-import units.Quantity
-import units.Unit
-import units.UnitRegistry
+import evaluator.Evaluator
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import units.format.UnitFormatter
 
 class QuantityTest {
 
-    val engine = FormulaEngine()
+    private val registry = UnitRegistry
+    private fun engine(vars: Map<String, Quantity> = emptyMap()) =
+        FormulaEngine(Evaluator(vars), registry)
 
     @BeforeEach
     fun setup() {
@@ -61,8 +64,8 @@ class QuantityTest {
         val q2 = Quantity(5.0, UnitRegistry.get("m"))
 
         val result = q1 + q2
-        assertEquals(510.0, result.value, 0.0001)  // still in q1's unit (cm)
-        assertEquals("cm", result.unit.name)
+        Assertions.assertEquals(510.0, result.value, 0.0001)  // still in q1's unit (cm)
+        Assertions.assertEquals("cm", result.unit.name)
     }
 
     @Test
@@ -81,8 +84,8 @@ class QuantityTest {
         val q2 = Quantity(50.0, UnitRegistry.get("cm"))
 
         val result = q1 - q2
-        assertEquals(0.5, result.value, 0.0001)
-        assertEquals("m", result.unit.name)
+        Assertions.assertEquals(0.5, result.value, 0.0001)
+        Assertions.assertEquals("m", result.unit.name)
     }
 
     @Test
@@ -94,9 +97,9 @@ class QuantityTest {
         val result = q1 * q2 * q3
 
         // Value is raw multiplication
-        assertEquals(2688000.0, result.value, 0.0001)
-        assertEquals("kg*pk_ton*tonne", result.unit.name)
-        assertEquals(3, result.unit.dimension.mass)
+        Assertions.assertEquals(2688000.0, result.value, 0.0001)
+        Assertions.assertEquals("kg*pk_ton*tonne", result.unit.name)
+        Assertions.assertEquals(3, result.unit.dimension.mass)
     }
 
     @Test
@@ -105,8 +108,8 @@ class QuantityTest {
         val length = Quantity(100.0, UnitRegistry.get("m"))
 
         val result = distance / length
-        assertEquals(100.0, result.value, 0.0001) // 10 km / 100 m
-        assertTrue(result.unit.dimension.isZero())
+        Assertions.assertEquals(100.0, result.value, 0.0001) // 10 km / 100 m
+        Assertions.assertTrue(result.unit.dimension.isZero())
     }
 
     @Test
@@ -117,9 +120,9 @@ class QuantityTest {
         val speed = dist / time
         val speedKmHr = speed.to("km/hr")  // convert for human-readable test
 
-        assertEquals(50.0, speedKmHr.value, 0.0001)
-        assertEquals(1, speed.unit.dimension.length)
-        assertEquals(-1, speed.unit.dimension.time)
+        Assertions.assertEquals(50.0, speedKmHr.value, 0.0001)
+        Assertions.assertEquals(1, speed.unit.dimension.length)
+        Assertions.assertEquals(-1, speed.unit.dimension.time)
     }
 
     @Test
@@ -127,22 +130,22 @@ class QuantityTest {
         val q = Quantity(2.0, UnitRegistry.get("m"))
         val result = q.pow(3)
 
-        assertEquals(8.0, result.value, 0.0001)  // 2^3 = 8
-        assertEquals(3, result.unit.dimension.length)
+        Assertions.assertEquals(8.0, result.value, 0.0001)  // 2^3 = 8
+        Assertions.assertEquals(3, result.unit.dimension.length)
     }
 
     @Test
     fun `conversion works`() {
         val q = Quantity(100.0, UnitRegistry.get("cm"))
         val result = q.to("m")
-        assertEquals(1.0, result.value, 0.0001)
+        Assertions.assertEquals(1.0, result.value, 0.0001)
     }
 
     @Test
     fun `nested conversion works`() {
         val start = Quantity(1.0, UnitRegistry.get("hr"))
         val result = start.to("min").to("s")
-        assertEquals(3600.0, result.value, 0.0001)
+        Assertions.assertEquals(3600.0, result.value, 0.0001)
     }
 
     @Test
@@ -150,8 +153,8 @@ class QuantityTest {
         val q = Quantity(5.0, UnitRegistry.get("m"))
         val one = Quantity(1.0, UnitRegistry.get("unitless"))
         val result = q * one
-        assertEquals(5.0, result.value)
-        assertEquals(q.unit.dimension, result.unit.dimension)
+        Assertions.assertEquals(5.0, result.value)
+        Assertions.assertEquals(q.unit.dimension, result.unit.dimension)
     }
 
     @Test
@@ -166,14 +169,14 @@ class QuantityTest {
     fun `formatter integration example`() {
         val q = Quantity(1500.0, UnitRegistry.get("m"))
         val formatted = UnitFormatter.format(q, "km")
-        assertEquals("1.5 km", formatted)
+        Assertions.assertEquals("1.5 km", formatted)
     }
 
     @Test
     fun `multiplying quantity with scalar preserves dimension`() {
         val q = Quantity(10.0, UnitRegistry.get("m"))
         val result = Quantity(2.0, UnitRegistry.get("unitless")) * q
-        assertEquals(20.0, result.value, 0.0001)
-        assertEquals(1, result.unit.dimension.length)
+        Assertions.assertEquals(20.0, result.value, 0.0001)
+        Assertions.assertEquals(1, result.unit.dimension.length)
     }
 }

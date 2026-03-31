@@ -1,8 +1,8 @@
-import evaluator.Evaluator
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
+package evaluator
+
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import parser.Expr
 import parser.Operator
 import units.Dimension
@@ -14,7 +14,7 @@ class EvaluatorTest {
     @BeforeEach
     fun setup() {
         val unitlessDim = Dimension(0, 0, 0)
-        UnitRegistry.register(units.Unit("unitless", 1.0, unitlessDim))
+        UnitRegistry.register(Unit("unitless", 1.0, unitlessDim))
 
         val length = Dimension(length = 1)
 
@@ -43,14 +43,14 @@ class EvaluatorTest {
         val evaluator = Evaluator(variables)
 
         val result = evaluator.eval(Expr.Variable("x"))
-        assertEquals(10.0, result.value)
-        assertEquals(UnitRegistry.get("m"), result.unit)
+        Assertions.assertEquals(10.0, result.value)
+        Assertions.assertEquals(UnitRegistry.get("m"), result.unit)
     }
 
     @Test
     fun `should throw error for missing variables`() {
         val evaluator = Evaluator(emptyMap())
-        assertThrows(IllegalStateException::class.java) {
+        Assertions.assertThrows(IllegalStateException::class.java) {
             evaluator.eval(Expr.Variable("y"))
         }
     }
@@ -59,8 +59,8 @@ class EvaluatorTest {
     fun `should evaluate number literals`() {
         val evaluator = Evaluator(emptyMap())
         val result = evaluator.eval(Expr.Number(42.0, "unitless"))
-        assertEquals(42.0, result.value)
-        assertEquals(UnitRegistry.get("unitless"), result.unit)
+        Assertions.assertEquals(42.0, result.value)
+        Assertions.assertEquals(UnitRegistry.get("unitless"), result.unit)
     }
 
     @Test
@@ -71,8 +71,8 @@ class EvaluatorTest {
         )
         val evaluator = Evaluator(variables)
         val result = evaluator.eval(Expr.Binary(Expr.Variable("a"), Operator.ADD, Expr.Variable("b")))
-        assertEquals(5.0, result.value, 0.0001)
-        assertEquals(UnitRegistry.get("m"), result.unit)
+        Assertions.assertEquals(5.0, result.value, 0.0001)
+        Assertions.assertEquals(UnitRegistry.get("m"), result.unit)
     }
 
     @Test
@@ -84,8 +84,8 @@ class EvaluatorTest {
         val evaluator = Evaluator(variables)
         val result = evaluator.eval(Expr.Binary(Expr.Variable("a"), Operator.ADD, Expr.Variable("b")))
         // 2 + 3 = 5 m → in terms of left unit (cm) = 500 cm
-        assertEquals(500.0, result.value, 0.0001)
-        assertEquals(UnitRegistry.get("cm"), result.unit)
+        Assertions.assertEquals(500.0, result.value, 0.0001)
+        Assertions.assertEquals(UnitRegistry.get("cm"), result.unit)
     }
 
     @Test
@@ -95,7 +95,7 @@ class EvaluatorTest {
             "b" to Quantity(5.0, UnitRegistry.get("kg"))
         )
         val evaluator = Evaluator(variables)
-        assertThrows(IllegalArgumentException::class.java) {
+        Assertions.assertThrows(IllegalArgumentException::class.java) {
             evaluator.eval(Expr.Binary(Expr.Variable("a"), Operator.ADD, Expr.Variable("b")))
         }
     }
@@ -109,13 +109,13 @@ class EvaluatorTest {
         val evaluator = Evaluator(variables)
 
         val speed = evaluator.eval(Expr.Binary(Expr.Variable("length"), Operator.DIV, Expr.Variable("time")))
-        assertEquals(5.0, speed.value, 0.0001)
-        assertEquals(1, speed.unit.dimension.length)
-        assertEquals(-1, speed.unit.dimension.time)
+        Assertions.assertEquals(5.0, speed.value, 0.0001)
+        Assertions.assertEquals(1, speed.unit.dimension.length)
+        Assertions.assertEquals(-1, speed.unit.dimension.time)
 
         val area = evaluator.eval(Expr.Binary(Expr.Variable("length"), Operator.MUL, Expr.Variable("length")))
-        assertEquals(100.0, area.value, 0.0001)
-        assertEquals(2, area.unit.dimension.length)
+        Assertions.assertEquals(100.0, area.value, 0.0001)
+        Assertions.assertEquals(2, area.unit.dimension.length)
     }
 
     @Test
@@ -131,8 +131,8 @@ class EvaluatorTest {
             )
         )
 
-        assertEquals(9.0, squared.value, 0.0001)
-        assertEquals(2, squared.unit.dimension.length)
+        Assertions.assertEquals(9.0, squared.value, 0.0001)
+        Assertions.assertEquals(2, squared.unit.dimension.length)
     }
 
     @Test
@@ -146,8 +146,8 @@ class EvaluatorTest {
             Expr.Number(5.0, "m")
         )
         val result = evaluator.eval(expr)
-        assertEquals(-5.0, result.value, 0.0001)
-        assertEquals(UnitRegistry.get("m"), result.unit)
+        Assertions.assertEquals(-5.0, result.value, 0.0001)
+        Assertions.assertEquals(UnitRegistry.get("m"), result.unit)
     }
 
     @Test
@@ -165,7 +165,7 @@ class EvaluatorTest {
         )
         val result = evaluator.eval(expr)
         // (2+3) * 2 = 10 m
-        assertEquals(10.0, result.value, 0.0001)
+        Assertions.assertEquals(10.0, result.value, 0.0001)
 //        assertEquals(UnitRegistry.get("m"), result.unit)
     }
 }
