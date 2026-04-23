@@ -15,10 +15,16 @@ class FormulaEngineTest {
 
     private val registry = UnitRegistry
     private fun engine(vars: Map<String, Quantity> = emptyMap()) =
-        FormulaEngine(Evaluator(vars), registry)
+        FormulaEngine(
+            Evaluator(vars, currency.StaticExchangeRateProvider()),
+            registry
+        )
+
 
     @BeforeEach
     fun setup() {
+        UnitRegistry.clear()
+
         // Unitless
         val unitlessDim = Dimension()
         UnitRegistry.register(Unit("unitless", 1.0, unitlessDim))
@@ -59,6 +65,8 @@ class FormulaEngineTest {
         UnitRegistry.register(Unit("slug", 14.5939029, mass))
         UnitRegistry.register(Unit("smoot", 1.7018, length))
         UnitRegistry.register(Unit("st", 6.35029, mass))
+
+        // CURRENCY DEFINED IN THE DUMMY StaticExchangeRateProvider.kt FILE
     }
 
     // ----------------------------
@@ -468,5 +476,98 @@ class FormulaEngineTest {
         val result = engine().evaluate(expr, null)
 
         Assertions.assertTrue(result.unit.dimension.isZero())
+    }
+
+    // ---------- Currency -------------- //
+    @Test
+    fun `currency addition with conversion`() {
+
+        val expr = Expr.Binary(
+            Expr.Number(100.0, "USD"),
+            Operator.ADD,
+            Expr.Number(28000.0, "PKR")
+        )
+
+        val result = engine().evaluate(expr, null)
+
+        Assertions.assertEquals(200.0, result.value, 1e-6)
+        Assertions.assertEquals(
+            mapOf("USD" to 1),
+            result.unit.dimension.currency
+        )
+    }
+
+    @Test
+    fun `same currency addition`() {
+
+        val expr = Expr.Binary(
+            Expr.Number(100.0, "USD"),
+            Operator.ADD,
+            Expr.Number(50.0, "USD")
+        )
+
+        val result = engine().evaluate(expr, null)
+
+        Assertions.assertEquals(150.0, result.value, 1e-6)
+    }
+
+    @Test
+    fun `currency and unit mismatch`() {
+
+        val expr = Expr.Binary(
+            Expr.Number(100.0, "USD"),
+            Operator.ADD,
+            Expr.Number(5.0, "m")
+        )
+
+        Assertions.assertThrows(IllegalArgumentException::class.java) {
+            engine().evaluate(expr, null)
+        }
+    }
+
+    @Test
+    fun `currency with unit multiplication`() {
+
+        val expr = Expr.Binary(
+            Expr.Number(3.0, "USD/L"),
+            Operator.MUL,
+            Expr.Number(50.0, "L")
+        )
+
+        val result = engine().evaluate(expr, null)
+
+        Assertions.assertEquals(150.0, result.value, 1e-6)
+        Assertions.assertEquals(
+            mapOf("USD" to 1),
+            result.unit.dimension.currency
+        )
+    }
+
+    @Test
+    fun `currency division cancels`() {
+
+        val expr = Expr.Binary(
+            Expr.Number(100.0, "USD"),
+            Operator.DIV,
+            Expr.Number(50.0, "USD")
+        )
+
+        val result = engine().evaluate(expr, null)
+
+        Assertions.assertTrue(result.unit.dimension.isZero())
+    }
+
+    @Test
+    fun `currency power invalid`() {
+
+        val expr = Expr.Binary(
+            Expr.Number(10.0, "USD"),
+            Operator.POW,
+            Expr.Number(2.0, "")
+        )
+//        println(engine().evaluate(expr, null))
+        Assertions.assertThrows(IllegalArgumentException::class.java) {
+            engine().evaluate(expr, null)
+        }
     }
 }

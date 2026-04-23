@@ -24,12 +24,27 @@ object UnitRegistry {
         var result = get("unitless")
 
         for (token in tokens) {
+
             if (token.contains("^")) {
                 val (base, expStr) = token.split("^")
                 val exp = expStr.toInt()
-                result *= get(base).pow(exp)
+
+                val unit = get(base)
+
+                // ❗ BLOCK currency exponentiation HERE
+                if (unit.dimension.currency.isNotEmpty()) {
+                    throw IllegalArgumentException("Currency units cannot have exponents")
+                }
+
+                result *= unit.pow(exp)
             } else {
-                result *= get(token)
+
+                if (isCurrency(token)) {
+                    val dim = Dimension(currency = mapOf(token to 1))
+                    result *= Unit(token, 1.0, dim)
+                } else {
+                    result *= get(token)
+                }
             }
         }
 
@@ -52,5 +67,9 @@ object UnitRegistry {
         }
 
         return result
+    }
+
+    private fun isCurrency(symbol: String): Boolean {
+        return symbol in setOf("USD", "PKR", "EUR")
     }
 }

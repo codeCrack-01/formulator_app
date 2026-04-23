@@ -3,6 +3,7 @@ package api
 import dimensions.*
 import evaluator.Evaluator
 import parser.Expr
+import parser.Operator
 import units.*
 
 class FormulaEngine(
@@ -91,15 +92,25 @@ class FormulaEngine(
 
             is Expr.Variable -> expr
 
-            is Expr.Binary -> expr.copy(
-                left = attachUnits(expr.left, inferred),
-                right = attachUnits(expr.right, inferred)
-            )
+            is Expr.Binary -> {
+                val leftAttached = attachUnits(expr.left, inferred)
+                val rightAttached = attachUnits(expr.right, inferred)
+
+                // ❗ DO NOT collapse POW into unit strings
+                if (expr.op == Operator.POW) {
+                    return Expr.Binary(leftAttached, expr.op, rightAttached)
+                }
+
+                expr.copy(
+                    left = leftAttached,
+                    right = rightAttached
+                )
+            }
         }
     }
 
     private fun dimToUnitString(dim: DimensionVector): String {
-        val baseUnits = listOf("m", "kg", "s", "$")
+        val baseUnits = listOf("m", "kg", "s", "CUR")
 
         val numerator = mutableListOf<String>()
         val denominator = mutableListOf<String>()
