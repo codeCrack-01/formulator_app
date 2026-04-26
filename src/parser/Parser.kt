@@ -122,7 +122,19 @@ class Parser(private val tokens: List<Token>) {
         if (isAtEnd()) error("Unexpected end of input")
 
         return when (val token = advance()) {
-            is Token.Number -> Expr.Number(token.value, "unitless")
+            is Token.Number -> {
+                val value = token.value
+
+                // look ahead for unit
+                val next = peek()
+
+                if (next is Token.Variable) {
+                    advance() // consume unit
+                    return Expr.Number(value, next.name)
+                }
+
+                Expr.Number(value, "")
+            }
 
             is Token.Variable -> Expr.Variable(token.name)
 

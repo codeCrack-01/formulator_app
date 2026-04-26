@@ -1,3 +1,5 @@
+package currency
+
 import units.Dimension
 import units.Unit
 import units.UnitRegistry
@@ -14,8 +16,6 @@ object CurrencyBootstrap {
     )
 
     fun registerAll() {
-        val dim = Dimension()
-
         currencies.forEach { (code, factor) ->
             UnitRegistry.register(
                 Unit(code, factor, Dimension(currency = mapOf(code to 1)))

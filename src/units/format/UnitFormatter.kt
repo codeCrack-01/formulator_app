@@ -73,7 +73,7 @@ object UnitFormatter {
             // Volume → m³
             dim.length == 3 -> q
 
-            // Length → auto scale (m → km if large)
+            // Length → autoscale (m → km if large)
             dim.length == 1 && dim.time == 0 -> {
                 when {
                     q.value >= 1000 -> Quantity(q.value / 1000.0, q.unit.copy(name = "km", factor = 1000.0))

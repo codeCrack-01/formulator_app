@@ -33,9 +33,9 @@ class FormulaEngine(
         // Solve
         val inferred = Solver.solve(constraints).toMutableMap()
 
-        if (inferred.isEmpty()) {
-            println("⚠️ No dimension inference possible for this expression")
-        }
+//        if (inferred.isEmpty()) {
+//            println("⚠️ No dimension inference possible for this expression")
+//        }
 
         // Apply overrides
         applyOverrides(inferred, overrides)
@@ -47,9 +47,7 @@ class FormulaEngine(
         val result = evaluator.eval(enriched)
 
         if (expected != null && result.unit.dimension != expected) {
-            println("⚠️ Dimension mismatch!")
-            println("Expected: $expected")
-            println("Actual: ${result.unit.dimension}")
+            throw IllegalStateException()
         }
 
         return result

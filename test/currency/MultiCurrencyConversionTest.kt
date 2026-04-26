@@ -1,5 +1,6 @@
 package tests
 
+import currency.CurrencyBootstrap
 import currency.CurrencyConverter
 import currency.StaticExchangeRateProvider
 import evaluator.Evaluator
