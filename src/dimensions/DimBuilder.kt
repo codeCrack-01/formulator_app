@@ -3,6 +3,7 @@ package dimensions
 import parser.Expr
 import parser.Operator
 import units.Quantity
+import units.UnitParser
 
 // Result wrapper to avoid double-building bug
 data class DimBuildResult(
@@ -38,10 +39,19 @@ object DimBuilder {
             }
 
             is Expr.Variable -> {
-                val q = variables[expr.name]
-                    ?: error("Variable ${expr.name} not found")
+                val quantity = variables[expr.name]
+                    ?: try {
+                        Quantity(
+                            1.0,
+                            units.UnitRegistry.get(expr.name)
+                        )
+                    } catch (e: Exception) {
+                        error("Variable ${expr.name} not found")
+                    }
 
-                DimConst(q.unit.dimension.toVector())
+                DimConst(
+                    quantity.unit.dimension.toVector()
+                )
             }
 
             is Expr.Binary -> {
@@ -91,6 +101,6 @@ object DimBuilder {
 
     // 🔧 Bridge: Unit → DimensionVector
     private fun unitToDim(unit: String): DimensionVector {
-        return units.UnitRegistry.parse(unit).dimension.toVector()
+        return UnitParser.parse(unit)
     }
 }

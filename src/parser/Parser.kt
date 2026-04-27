@@ -4,7 +4,6 @@ class Parser(private val tokens: List<Token>) {
 
     private var pos = 0
 
-    // Helper Functions //
     private inline fun <reified T : Token> consume(message: String): T {
         if (peek() is T) {
             return advance() as T
@@ -17,18 +16,14 @@ class Parser(private val tokens: List<Token>) {
         return tokens[pos]
     }
 
-    private fun check(type: Token): Boolean {
-        if (isAtEnd()) return false
-        val current = peek() ?: return false
-        return current::class == type::class
-    }
-
     private inline fun <reified T : Token> match(): Boolean {
         val current = peek()
+
         if (current is T) {
             advance()
             return true
         }
+
         return false
     }
 
@@ -37,21 +32,13 @@ class Parser(private val tokens: List<Token>) {
         return previous()
     }
 
-    private fun isAtEnd(): Boolean = pos >= tokens.size
-
-    private fun previous(): Token = tokens[pos - 1]
-
-    private fun mapOperator(token: Token): Operator {
-        return when (token) {
-            is Token.Plus -> Operator.ADD
-            is Token.Minus -> Operator.SUB
-            is Token.Mul -> Operator.MUL
-            is Token.Div -> Operator.DIV
-            is Token.Pow -> Operator.POW
-            else -> error("Invalid operator")
-        }
+    private fun previous(): Token {
+        return tokens[pos - 1]
     }
-    // ---------------- //
+
+    private fun isAtEnd(): Boolean {
+        return pos >= tokens.size
+    }
 
     fun parse(): Expr {
         return parseExpression()
@@ -82,7 +69,7 @@ class Parser(private val tokens: List<Token>) {
 
         while (true) {
             when {
-                match<Token.Mul>() -> {
+                match<Token.Mul>() || match<Token.Dot>() -> {
                     val right = parsePower()
                     expr = Expr.Binary(expr, Operator.MUL, right)
                 }
@@ -98,7 +85,7 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun parsePower(): Expr {
-        var expr = parseUnary() // Change this from parsePrimary to parseUnary
+        var expr = parseUnary()
 
         if (match<Token.Pow>()) {
             val right = parsePower()
@@ -110,33 +97,39 @@ class Parser(private val tokens: List<Token>) {
 
     private fun parseUnary(): Expr {
         if (match<Token.Minus>()) {
-            val right = parseUnary() // Recursive to handle --5
-            // We represent -x as 0 - x or a new Unary class
-            return Expr.Binary(Expr.Number(0.0, "unitless"), Operator.SUB, right)
+            val right = parseUnary()
+
+            return Expr.Binary(
+                Expr.Number(0.0, "unitless"),
+                Operator.SUB,
+                right
+            )
         }
 
         return parsePrimary()
     }
 
     private fun parsePrimary(): Expr {
-        if (isAtEnd()) error("Unexpected end of input")
+        if (isAtEnd()) {
+            error("Unexpected end of input")
+        }
 
         return when (val token = advance()) {
             is Token.Number -> {
                 val value = token.value
-
-                // look ahead for unit
                 val next = peek()
 
                 if (next is Token.Variable) {
-                    advance() // consume unit
-                    return Expr.Number(value, next.name)
+                    advance()
+                    Expr.Number(value, next.name)
+                } else {
+                    Expr.Number(value, "")
                 }
-
-                Expr.Number(value, "")
             }
 
-            is Token.Variable -> Expr.Variable(token.name)
+            is Token.Variable -> {
+                Expr.Variable(token.name)
+            }
 
             is Token.LParen -> {
                 val expr = parseExpression()

@@ -11,6 +11,7 @@ class Evaluator(
     val variables: Map<String, Quantity>,
     val exchange: ExchangeRateProvider? = null
 ) {
+
     private fun convertCurrency(
         q: Quantity,
         targetCode: String
@@ -35,12 +36,26 @@ class Evaluator(
                 } else {
                     UnitRegistry.get("unitless")
                 }
+
                 Quantity(expr.value, unit)
             }
 
-            is Expr.Variable ->
+            is Expr.Variable -> {
+                // Priority:
+                // 1. runtime variables
+                // 2. registered units
+                // 3. error
+
                 variables[expr.name]
-                    ?: error("Variable ${expr.name} not found")
+                    ?: try {
+                        Quantity(
+                            1.0,
+                            UnitRegistry.get(expr.name)
+                        )
+                    } catch (e: Exception) {
+                        error("Variable ${expr.name} not found")
+                    }
+            }
 
             is Expr.Binary -> {
                 var left = eval(expr.left)
@@ -62,7 +77,11 @@ class Evaluator(
                         val rightDim = right.unit.dimension
 
                         if (leftDim == rightDim) {
-                            return if (expr.op == Operator.ADD) left + right else left - right
+                            return if (expr.op == Operator.ADD) {
+                                left + right
+                            } else {
+                                left - right
+                            }
                         }
 
                         if (leftDim.isPureCurrency() && rightDim.isPureCurrency()) {
@@ -76,13 +95,17 @@ class Evaluator(
                                 leftCurrency
                             )
 
-                            val resultValue = if (expr.op == Operator.ADD) {
-                                left.value + convertedRight
-                            } else {
-                                left.value - convertedRight
-                            }
+                            val resultValue =
+                                if (expr.op == Operator.ADD) {
+                                    left.value + convertedRight
+                                } else {
+                                    left.value - convertedRight
+                                }
 
-                            return Quantity(resultValue, left.unit)
+                            return Quantity(
+                                resultValue,
+                                left.unit
+                            )
                         }
 
                         throw IllegalArgumentException(
@@ -92,7 +115,18 @@ class Evaluator(
                     }
 
                     Operator.MUL -> {
+
                         val result = left * right
+
+                        // 🔧 FIX: promote unitless scalar when RHS has unit
+                        if (left.unit.dimension.isZero() && !right.unit.dimension.isZero()) {
+                            return Quantity(left.value * right.value, right.unit)
+                        }
+
+                        if (right.unit.dimension.isZero() && !left.unit.dimension.isZero()) {
+                            return Quantity(left.value * right.value, left.unit)
+                        }
+
                         result.unit.dimension.validate()
                         result
                     }
@@ -104,19 +138,27 @@ class Evaluator(
                     }
 
                     Operator.POW -> {
-                        require(right.unit.dimension.isZero())
+                        require(right.unit.dimension.isZero()) {
                             "Exponent must be unitless"
+                        }
 
                         val exp = right.value
-                        require(kotlin.math.abs(exp - exp.roundToInt()) < 1e-9)
+
+                        require(
+                            kotlin.math.abs(
+                                exp - exp.roundToInt()
+                            ) < 1e-9
+                        ) {
                             "Exponent must be an integer"
+                        }
 
-                        // ❗ THIS MUST BE EXACT
-                        if (left.unit.dimension.currency.isNotEmpty())
-                            throw IllegalArgumentException("Cannot apply power to currency quantities")
+                        if (left.unit.dimension.currency.isNotEmpty()) {
+                            throw IllegalArgumentException(
+                                "Cannot apply power to currency quantities"
+                            )
+                        }
 
-                        val result = left.pow(exp.toInt())
-                        result
+                        left.pow(exp.toInt())
                     }
                 }
             }
@@ -128,9 +170,12 @@ class Evaluator(
         from: String,
         to: String
     ): Double {
-        val provider = exchange ?: error("ExchangeRateProvider not set")
-        if (from == to)
+        val provider = exchange
+            ?: error("ExchangeRateProvider not set")
+
+        if (from == to) {
             return amount
+        }
 
         val rate = provider.rate(from, to)
         return amount * rate

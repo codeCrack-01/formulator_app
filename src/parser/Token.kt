@@ -9,12 +9,16 @@ sealed class Token {
     object Mul : Token()
     object Div : Token()
     object Pow : Token()
+    object Dot : Token()
 
     object LParen : Token()
     object RParen : Token()
 
-
-    // Helper to identify operators for the consecutive check
     val isOperator: Boolean
-        get() = this is Plus || this is Minus || this is Mul || this is Div || this is Pow
+        get() = this is Plus ||
+                this is Minus ||
+                this is Mul ||
+                this is Div ||
+                this is Pow ||
+                this is Dot
 }

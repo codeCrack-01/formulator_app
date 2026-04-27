@@ -18,6 +18,14 @@ object UnitRegistry {
         units.clear()
     }
 
+    fun allUnitNamesSortedByLength(): List<String> {
+        return units.keys.sortedByDescending { it.length }
+    }
+
+    fun snapshotUnitNames(): List<String> {
+        return units.keys.sortedByDescending { it.length }
+    }
+
     private fun parseProduct(part: String): Unit {
         val tokens = part.split("*")
 
